@@ -1,26 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>AR Treasure Hunt Adventure</title>
+  
+  <!-- A-Frame and MindAR Libraries -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.0.0/dist/aframe-extras.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
-<html>
-  <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.0.0/dist/aframe-extras.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-  </head>
-  <body>
-    <a-scene mindar-image="imageTargetSrc: https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/band-example/band.mind;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #000;
+      color: #fff;
+    }
+
+    /* Fullscreen AR container */
+    #ar-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    /* HUD Overlay */
+    #hud-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 16px;
+    }
+
+    /* Top Navigation / Status Header */
+    .header-bar {
+      pointer-events: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 18px;
+      padding: 10px 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .title-icon {
+      font-size: 24px;
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    .game-title {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: #f1f5f9;
+    }
+
+    .game-subtitle {
+      font-size: 11px;
+      color: #38bdf8;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .btn-icon {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-icon:active {
+      transform: scale(0.92);
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Step tracker badges */
+    .tracker-bar {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      pointer-events: auto;
+    }
+
+    .step-pill {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(8px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      color: #94a3b8;
+    }
+
+    .step-pill.active {
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.35), rgba(59, 130, 246, 0.45));
+      border-color: #38bdf8;
+      color: #fff;
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+      transform: scale(1.02);
+    }
+
+    .step-pill.completed {
+      background: rgba(16, 185, 129, 0.25);
+      border-color: #10b981;
+      color: #a7f3d0;
+    }
+
+    /* Center Scanner Reticle */
+    .scanner-reticle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 220px;
+      height: 220px;
+      border: 2px dashed rgba(56, 189, 248, 0.4);
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      transition: all 0.3s;
+    }
+
+    .scanner-reticle.found {
+      border-color: #10b981;
+      border-style: solid;
+      box-shadow: 0 0 30px rgba(16, 185, 129, 0.6);
+      transform: translate(-50%, -50%) scale(1.05);
+    }
+
+    .scanner-corner {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-color: #38bdf8;
+      border-style: solid;
+    }
+
+    .reticle-tl { top: -2px; left: -2px; border-width: 3px 0 0 3px; border-top-left-radius: 20px; }
+    .reticle-tr { top: -2px; right: -2px; border-width: 3px 3px 0 0; border-top-right-radius: 20px; }
+    .reticle-bl { bottom: -2px; left: -2px; border-width: 0 0 3px 3px; border-bottom-left-radius: 20px; }
+    .reticle-br { bottom: -2px; right: -2px; border-width: 0 3px 3px 0; border-bottom-right-radius: 20px; }
+
+    .scanner-line {
+      position: absolute;
+      width: 90%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #38bdf8, transparent);
+      animation: scanAnim 2.4s infinite ease-in-out;
+      box-shadow: 0 0 10px #38bdf8;
+    }
+
+    @keyframes scanAnim {
+      0% { top: 10%; opacity: 0.2; }
+      50% { top: 90%; opacity: 1; }
+      100% { top: 10%; opacity: 0.2; }
+    }
+
+    /* Bottom Clue Panel */
+    .clue-panel {
+      pointer-events: auto;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 22px;
+      padding: 16px 18px;
+      box-shadow: 0 -8px 36px rgba(0, 0, 0, 0.5);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .clue-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .clue-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #38bdf8;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .clue-text {
+      font-size: 15px;
+      line-height: 1.45;
+      color: #f8fafc;
+      font-weight: 500;
+      margin-bottom: 12px;
+      min-height: 44px;
+    }
+
+    .clue-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-action {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      color: white;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+    }
+
+    .btn-primary:active {
+      transform: scale(0.97);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #e2e8f0;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-secondary:active {
+      transform: scale(0.97);
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    /* Modal / Popups */
+    .modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: #0f172a;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 24px;
+      padding: 24px;
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
+      transform: scale(0.9);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .modal-overlay.visible .modal-card {
+      transform: scale(1);
+    }
+
+    .modal-icon {
+      font-size: 52px;
+      margin-bottom: 12px;
+      display: inline-block;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #f8fafc;
+      margin-bottom: 8px;
+    }
+
+    .modal-desc {
+      font-size: 14px;
+      color: #94a3b8;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    .card-preview-img {
+      width: 100%;
+      max-height: 180px;
+      object-fit: contain;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 16px;
+    }
+
+    /* Confetti Canvas */
+    #confetti-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    /* Feedback Toast */
+    .toast {
+      position: absolute;
+      top: 85px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #f0fdf4;
+      padding: 10px 18px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s;
+      z-index: 40;
+      white-space: nowrap;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Confetti Canvas -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- AR Scene Container -->
+  <div id="ar-container">
+    <a-scene
+      mindar-image="imageTargetSrc: Assets/Targets/targets.mind; filterMinCF: 0.0001; filterBeta: 0.001; missTolerance: 5;"
+      color-space="sRGB"
+      renderer="colorManagement: true, physicallyCorrectLights: true"
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: false">
+      
       <a-assets>
-        <a-asset-item id="bearModel" src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/band-example/bear/scene.gltf"></a-asset-item>
-        <a-asset-item id="raccoonModel" src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/band-example/raccoon/scene.gltf"></a-asset-item>
+        <!-- 3D Models in Assets/Models -->
+        <a-asset-item id="modelCoffeeCup" src="Assets/Models/coffee_cup.glb"></a-asset-item>
+        <a-asset-item id="modelCompass" src="Assets/Models/vintage_compass.glb"></a-asset-item>
+        <a-asset-item id="modelMic" src="Assets/Models/golden_microphone.glb"></a-asset-item>
+        <a-asset-item id="modelChest" src="Assets/Models/treasure_chest.glb"></a-asset-item>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <a-entity mindar-image-target="targetIndex: 0">
-        <a-gltf-model rotation="0 0 0 " position="0 -0.25 0" scale="0.05 0.05 0.05" src="#raccoonModel" animation-mixer>
+      <!-- Ambient Lighting for vibrant 3D rendering -->
+      <a-light type="ambient" color="#ffffff" intensity="1.2"></a-light>
+      <a-light type="directional" color="#fffaed" intensity="1.5" position="1 2 1"></a-light>
+
+      <!-- ================= TARGET 0: COFFEE CUP ================= -->
+      <a-entity id="ar-target-0" mindar-image-target="targetIndex: 0">
+        <!-- Floating & Rotating Coffee Cup 3D Model -->
+        <a-entity
+          id="visual-target-0"
+          position="0 0 0.1"
+          rotation="20 0 0"
+          scale="1.2 1.2 1.2"
+          animation="property: rotation; to: 20 360 0; loop: true; dur: 9000; easing: linear">
+          <a-gltf-model src="#modelCoffeeCup"></a-gltf-model>
+          <a-light type="point" intensity="1.8" distance="2" position="0 0.4 0.3" color="#ffeedd"></a-light>
+        </a-entity>
       </a-entity>
-      <a-entity mindar-image-target="targetIndex: 1">
-        <a-gltf-model rotation="0 0 0 " position="0 -0.25 0" scale="0.05 0.05 0.05" src="#bearModel" animation-mixer>
+
+      <!-- ================= TARGET 1: VINTAGE COMPASS ================= -->
+      <a-entity id="ar-target-1" mindar-image-target="targetIndex: 1">
+        <!-- Floating & Rotating Vintage Compass 3D Model -->
+        <a-entity
+          id="visual-target-1"
+          position="0 0 0.12"
+          rotation="30 0 0"
+          scale="0.45 0.45 0.45"
+          animation="property: rotation; to: 30 360 0; loop: true; dur: 10000; easing: linear">
+          <a-gltf-model src="#modelCompass"></a-gltf-model>
+          <a-light type="point" intensity="2.0" distance="2" position="0 0.3 0.3" color="#ffe8aa"></a-light>
+        </a-entity>
       </a-entity>
+
+      <!-- ================= TARGET 2: GOLDEN MICROPHONE & TREASURE CHEST ================= -->
+      <a-entity id="ar-target-2" mindar-image-target="targetIndex: 2">
+        <!-- Floating & Rotating Golden Microphone 3D Model -->
+        <a-entity
+          id="visual-target-2"
+          position="0 -0.15 0.1"
+          rotation="15 0 0"
+          scale="0.38 0.38 0.38"
+          animation="property: rotation; to: 15 360 0; loop: true; dur: 8500; easing: linear">
+          <a-gltf-model src="#modelMic"></a-gltf-model>
+          
+          <!-- Auxiliary celebratory Treasure Chest sitting beside the mic -->
+          <a-gltf-model
+            src="#modelChest"
+            position="0.55 -0.15 0.1"
+            scale="0.45 0.45 0.45"
+            rotation="0 -25 0">
+          </a-gltf-model>
+
+          <a-light type="point" intensity="2.5" distance="3" position="0 0.5 0.4" color="#ffd700"></a-light>
+        </a-entity>
+      </a-entity>
+
     </a-scene>
-  </body>
+  </div>
+
+  <!-- HUD Overlay -->
+  <div id="hud-overlay">
+    
+    <!-- Top Bar -->
+    <div>
+      <div class="header-bar">
+        <div class="title-group">
+          <div class="title-icon">🧭</div>
+          <div>
+            <div class="game-title">AR Treasure Hunt</div>
+            <div class="game-subtitle" id="hunt-status">Seek Relic 1 of 3</div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-icon" id="btn-sound" title="Toggle Sound">🔊</button>
+          <button class="btn-icon" id="btn-reset" title="Restart Hunt">🔄</button>
+        </div>
+      </div>
+
+      <!-- Step Badges -->
+      <div class="tracker-bar">
+        <div class="step-pill active" id="badge-0">
+          <span>☕</span> <span>1. Coffee Cup</span>
+        </div>
+        <div class="step-pill" id="badge-1">
+          <span>🧭</span> <span>2. Compass</span>
+        </div>
+        <div class="step-pill" id="badge-2">
+          <span>🎙️</span> <span>3. Golden Mic</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center Reticle -->
+    <div class="scanner-reticle" id="reticle">
+      <div class="scanner-corner reticle-tl"></div>
+      <div class="scanner-corner reticle-tr"></div>
+      <div class="scanner-corner reticle-bl"></div>
+      <div class="scanner-corner reticle-br"></div>
+      <div class="scanner-line"></div>
+    </div>
+
+    <!-- Bottom Clue Panel -->
+    <div class="clue-panel">
+      <div class="clue-header">
+        <span class="clue-tag" id="clue-step-tag">🔍 CURRENT CLUE #1</span>
+        <span style="font-size: 12px; color: #94a3b8;" id="clue-target-name">Target: Coffee Cup</span>
+      </div>
+      <div class="clue-text" id="clue-text">
+        "I am warm in the morning and wake up your soul. Look for the steamy vessel that fuels your day!"
+      </div>
+      <div class="clue-actions">
+        <button class="btn-action btn-secondary" id="btn-hint">
+          <span>💡 Peek Card Hint</span>
+        </button>
+        <button class="btn-action btn-primary" id="btn-status-help">
+          <span>🎯 Aim Camera at Card</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast">Found Target!</div>
+
+  <!-- Hint / Target Card Preview Modal -->
+  <div class="modal-overlay" id="hint-modal">
+    <div class="modal-card">
+      <div class="modal-icon" id="hint-modal-icon">☕</div>
+      <h3 class="modal-title" id="hint-modal-title">Clue Card Target</h3>
+      <p class="modal-desc" id="hint-modal-desc">Look for this image target in your surroundings:</p>
+      <img id="hint-modal-img" class="card-preview-img" src="Assets/Images/Coffe_cup.png" alt="Target Preview" />
+      <button class="btn-action btn-primary" style="width: 100%;" id="btn-close-hint">Got It!</button>
+    </div>
+  </div>
+
+  <!-- Found Celebration Modal -->
+  <div class="modal-overlay" id="found-modal">
+    <div class="modal-card">
+      <div class="modal-icon" id="found-modal-icon">🎉</div>
+      <h3 class="modal-title" id="found-modal-title">Artifact Discovered!</h3>
+      <p class="modal-desc" id="found-modal-desc">Great job! The 3D model has emerged.</p>
+      <button class="btn-action btn-primary" style="width: 100%;" id="btn-next-clue">
+        <span>Proceed to Next Clue ➡️</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Victory Complete Modal -->
+  <div class="modal-overlay" id="victory-modal">
+    <div class="modal-card">
+      <div class="modal-icon">🏆</div>
+      <h3 class="modal-title" style="color: #fbbf24;">Treasure Hunt Master!</h3>
+      <p class="modal-desc">
+        Congratulations! You solved all riddles and uncovered every ancient 3D artifact:
+        <br /><br />
+        ☕ <b>Coffee Cup</b><br />
+        🧭 <b>Vintage Compass</b><br />
+        🎙️ <b>Golden Microphone & Treasure Chest</b>
+      </p>
+      <button class="btn-action btn-primary" style="width: 100%;" id="btn-play-again">
+        <span>Play Hunt Again 🔄</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Game Logic Script -->
+  <script>
+    // ==========================================
+    // TREASURE HUNT CONFIGURATION & CLUES
+    // ==========================================
+    const HUNT_STEPS = [
+      {
+        index: 0,
+        name: "Coffee Cup",
+        icon: "☕",
+        clue: "I am warm in the morning and wake up your soul. Look for the steamy vessel that fuels your day!",
+        hintImg: "Assets/Images/Coffe_cup.png",
+        rewardTitle: "Steamy Cup of Energy Found!",
+        rewardDesc: "You uncovered the Coffee Cup! Enjoy the 3D model floating above your card.",
+        modelId: "visual-target-0"
+      },
+      {
+        index: 1,
+        name: "Vintage Compass",
+        icon: "🧭",
+        clue: "I have no voice, but I guide the lost. Across wild oceans and forgotten lands, I always point True North!",
+        hintImg: "Assets/Images/Vintage Compass.png",
+        rewardTitle: "Vintage Compass Unlocked!",
+        rewardDesc: "The ancient brass compass has revealed its secrets. Follow the path ahead!",
+        modelId: "visual-target-1"
+      },
+      {
+        index: 2,
+        name: "Golden Microphone",
+        icon: "🎙️",
+        clue: "I amplify whispers and turn voices into legends. Seek the glittering golden instrument of stars!",
+        hintImg: "Assets/Images/Golden Microphone.png",
+        rewardTitle: "Grand Treasure Discovered!",
+        rewardDesc: "The Golden Microphone and Pirate Treasure Chest have appeared! You completed the hunt!",
+        modelId: "visual-target-2"
+      }
+    ];
+
+    // ==========================================
+    // STATE MANAGEMENT
+    // ==========================================
+    let currentStep = 0;
+    let soundEnabled = true;
+    let audioCtx = null;
+
+    // Web Audio Synthesizer (Zero network required)
+    function playAudioTone(type) {
+      if (!soundEnabled) return;
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'found') {
+          // Cheerful ascending arpeggio
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(440, now); // A4
+          osc.frequency.setValueAtTime(554.37, now + 0.1); // C#5
+          osc.frequency.setValueAtTime(659.25, now + 0.2); // E5
+          osc.frequency.setValueAtTime(880, now + 0.3); // A5
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+          osc.start(now);
+          osc.stop(now + 0.6);
+        } else if (type === 'victory') {
+          // Fanfare
+          osc.type = 'sine';
+          [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.type = 'triangle';
+            o.frequency.value = freq;
+            o.connect(g);
+            g.connect(audioCtx.destination);
+            g.gain.setValueAtTime(0.2, now + i * 0.12);
+            g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.5);
+            o.start(now + i * 0.12);
+            o.stop(now + i * 0.12 + 0.5);
+          });
+        } else if (type === 'wrong') {
+          // Low buzz
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(150, now);
+          osc.frequency.linearRampToValueAtTime(120, now + 0.25);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        }
+      } catch (err) {
+        console.warn('Audio tone error:', err);
+      }
+    }
+
+    // Vibration helper
+    function vibrate(pattern) {
+      if ("vibrate" in navigator) {
+        try { navigator.vibrate(pattern); } catch (e) {}
+      }
+    }
+
+    // UI Toast
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      toast.textContent = msg;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2600);
+    }
+
+    // ==========================================
+    // UI UPDATES
+    // ==========================================
+    function updateUI() {
+      const step = HUNT_STEPS[currentStep];
+
+      // Update header & badges
+      document.getElementById("hunt-status").textContent = `Seek Relic ${currentStep + 1} of ${HUNT_STEPS.length}`;
+      HUNT_STEPS.forEach((s, idx) => {
+        const badge = document.getElementById(`badge-${idx}`);
+        badge.classList.remove("active", "completed");
+        if (idx < currentStep) {
+          badge.classList.add("completed");
+        } else if (idx === currentStep) {
+          badge.classList.add("active");
+        }
+      });
+
+      // Update Clue box
+      document.getElementById("clue-step-tag").textContent = `🔍 CURRENT CLUE #${currentStep + 1}`;
+      document.getElementById("clue-target-name").textContent = `Target: ${step.name}`;
+      document.getElementById("clue-text").textContent = `"${step.clue}"`;
+
+      // Update Hint Modal data
+      document.getElementById("hint-modal-icon").textContent = step.icon;
+      document.getElementById("hint-modal-title").textContent = `Clue Target: ${step.name}`;
+      document.getElementById("hint-modal-img").src = step.hintImg;
+
+      // Update visibility of 3D models according to current progress
+      // (Only discovered targets remain visible, future targets stay hidden)
+      HUNT_STEPS.forEach((s, idx) => {
+        const el = document.getElementById(s.modelId);
+        if (el) {
+          el.setAttribute("visible", idx <= currentStep);
+        }
+      });
+    }
+
+    // ==========================================
+    // AR TARGET DETECTION HANDLERS
+    // ==========================================
+    function setupTargetListeners() {
+      HUNT_STEPS.forEach((step, idx) => {
+        const targetEntity = document.getElementById(`ar-target-${idx}`);
+        if (!targetEntity) return;
+
+        targetEntity.addEventListener("targetFound", () => {
+          handleTargetFound(idx);
+        });
+
+        targetEntity.addEventListener("targetLost", () => {
+          document.getElementById("reticle").classList.remove("found");
+        });
+      });
+    }
+
+    function handleTargetFound(scannedIndex) {
+      const reticle = document.getElementById("reticle");
+      reticle.classList.add("found");
+
+      if (scannedIndex === currentStep) {
+        // Player found the CURRENT clue target!
+        vibrate([100, 50, 150]);
+        playAudioTone("found");
+        launchConfetti();
+
+        const step = HUNT_STEPS[currentStep];
+        showToast(`✨ Found ${step.name}!`);
+
+        // Check if final target or intermediate target
+        if (currentStep === HUNT_STEPS.length - 1) {
+          // Final victory!
+          playAudioTone("victory");
+          setTimeout(() => {
+            document.getElementById("victory-modal").classList.add("visible");
+          }, 600);
+        } else {
+          // Show artifact reward & unlock next clue
+          setTimeout(() => {
+            document.getElementById("found-modal-icon").textContent = step.icon;
+            document.getElementById("found-modal-title").textContent = step.rewardTitle;
+            document.getElementById("found-modal-desc").textContent = step.rewardDesc;
+            document.getElementById("found-modal").classList.add("visible");
+          }, 500);
+        }
+
+      } else if (scannedIndex > currentStep) {
+        // Player scanned a future target prematurely
+        vibrate(200);
+        playAudioTone("wrong");
+        showToast(`🔒 Follow Clue #${currentStep + 1} first!`);
+      } else {
+        // Already found past target
+        showToast(`✅ You already collected ${HUNT_STEPS[scannedIndex].name}!`);
+      }
+    }
+
+    // Proceed to Next Clue
+    document.getElementById("btn-next-clue").addEventListener("click", () => {
+      document.getElementById("found-modal").classList.remove("visible");
+      if (currentStep < HUNT_STEPS.length - 1) {
+        currentStep++;
+        updateUI();
+        showToast(`🧭 Next Clue #${currentStep + 1} Activated!`);
+      }
+    });
+
+    // Reset Hunt
+    function resetGame() {
+      currentStep = 0;
+      document.getElementById("found-modal").classList.remove("visible");
+      document.getElementById("victory-modal").classList.remove("visible");
+      document.getElementById("hint-modal").classList.remove("visible");
+      updateUI();
+      showToast("🔄 Hunt restarted! Find Clue #1!");
+    }
+
+    document.getElementById("btn-reset").addEventListener("click", resetGame);
+    document.getElementById("btn-play-again").addEventListener("click", resetGame);
+
+    // Hint Modal Toggle
+    document.getElementById("btn-hint").addEventListener("click", () => {
+      document.getElementById("hint-modal").classList.add("visible");
+    });
+    document.getElementById("btn-close-hint").addEventListener("click", () => {
+      document.getElementById("hint-modal").classList.remove("visible");
+    });
+
+    // Sound Toggle
+    document.getElementById("btn-sound").addEventListener("click", () => {
+      soundEnabled = !soundEnabled;
+      document.getElementById("btn-sound").textContent = soundEnabled ? "🔊" : "🔇";
+      showToast(soundEnabled ? "Sound Enabled" : "Sound Muted");
+    });
+
+    // Confetti Effect
+    function launchConfetti() {
+      const canvas = document.getElementById("confetti-canvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const particles = [];
+      const colors = ["#38bdf8", "#fbbf24", "#34d399", "#f43f5e", "#a855f7"];
+      for (let i = 0; i < 70; i++) {
+        particles.push({
+          x: canvas.width / 2,
+          y: canvas.height * 0.45,
+          vx: (Math.random() - 0.5) * 12,
+          vy: (Math.random() - 0.8) * 12,
+          size: Math.random() * 8 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          rotation: Math.random() * 360,
+          rotSpeed: (Math.random() - 0.5) * 8
+        });
+      }
+
+      let frame = 0;
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.3; // gravity
+          p.rotation += p.rotSpeed;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate((p.rotation * Math.PI) / 180);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+          ctx.restore();
+        });
+
+        frame++;
+        if (frame < 90) {
+          requestAnimationFrame(animate);
+        } else {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+      }
+      requestAnimationFrame(animate);
+    }
+
+    // Window Resize Handling
+    window.addEventListener("resize", () => {
+      const canvas = document.getElementById("confetti-canvas");
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    // Initialize on page load
+    window.addEventListener("DOMContentLoaded", () => {
+      updateUI();
+      setupTargetListeners();
+    });
+  </script>
+</body>
 </html>
