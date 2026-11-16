@@ -120,6 +120,57 @@
       background: rgba(255, 255, 255, 0.25);
     }
 
+    .btn-speak-icon {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-speak-icon:active {
+      transform: scale(0.9);
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .voice-waves {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      height: 14px;
+      margin-left: 4px;
+      vertical-align: middle;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .voice-waves.speaking {
+      opacity: 1;
+    }
+
+    .voice-wave-bar {
+      width: 3px;
+      height: 100%;
+      background: #38bdf8;
+      border-radius: 2px;
+      animation: waveAnim 0.8s infinite ease-in-out;
+    }
+
+    .voice-wave-bar:nth-child(2) { animation-delay: 0.15s; }
+    .voice-wave-bar:nth-child(3) { animation-delay: 0.3s; }
+
+    @keyframes waveAnim {
+      0%, 100% { height: 4px; }
+      50% { height: 14px; }
+    }
+
     /* Step tracker badges */
     .tracker-bar {
       display: flex;
@@ -541,6 +592,7 @@
           </div>
         </div>
         <div style="display: flex; gap: 8px;">
+          <button class="btn-icon" id="btn-voice" title="Toggle AI Voiceover">🎙️</button>
           <button class="btn-icon" id="btn-sound" title="Toggle Sound">🔊</button>
           <button class="btn-icon" id="btn-reset" title="Restart Hunt">🔄</button>
         </div>
@@ -575,7 +627,15 @@
       <!-- 1. ACTIVE CLUE VIEW -->
       <div id="panel-clue-view">
         <div class="clue-header">
-          <span class="clue-tag" id="clue-step-tag">🔍 CURRENT CLUE #1</span>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="clue-tag" id="clue-step-tag">🔍 CURRENT CLUE #1</span>
+            <button class="btn-speak-icon" id="btn-speak-clue" title="Listen to AI Voiceover">🔊</button>
+            <div class="voice-waves" id="voice-waves">
+              <div class="voice-wave-bar"></div>
+              <div class="voice-wave-bar"></div>
+              <div class="voice-wave-bar"></div>
+            </div>
+          </div>
           <span style="font-size: 12px; color: #94a3b8;" id="clue-target-name">Target: Coffee Cup</span>
         </div>
         <div class="clue-text" id="clue-text">
@@ -594,7 +654,10 @@
       <!-- 2. TARGET FOUND VIEW (replaces clue text in the panel without blocking camera!) -->
       <div id="panel-found-view" style="display: none;">
         <div class="clue-header">
-          <span class="clue-tag" style="color: #34d399;">✨ TARGET DISCOVERED!</span>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="clue-tag" style="color: #34d399;">✨ TARGET DISCOVERED!</span>
+            <button class="btn-speak-icon" id="btn-speak-found" title="Replay AI Voiceover">🔊</button>
+          </div>
           <span style="font-size: 12px; color: #a7f3d0;" id="found-target-badge">☕ Coffee Cup</span>
         </div>
         <div style="margin-bottom: 12px;">
@@ -611,7 +674,10 @@
       <!-- 3. VICTORY VIEW (ending state in bottom panel without blocking camera!) -->
       <div id="panel-victory-view" style="display: none;">
         <div class="clue-header">
-          <span class="clue-tag" style="color: #fbbf24;">🏆 TREASURE HUNT COMPLETE!</span>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="clue-tag" style="color: #fbbf24;">🏆 TREASURE HUNT COMPLETE!</span>
+            <button class="btn-speak-icon" id="btn-speak-victory" title="Replay AI Voiceover">🔊</button>
+          </div>
           <span style="font-size: 12px; color: #fde68a;">3 / 3 Relics Found</span>
         </div>
         <div style="margin-bottom: 12px;">
@@ -637,9 +703,27 @@
     <div class="modal-card">
       <div class="modal-icon" id="hint-modal-icon">☕</div>
       <h3 class="modal-title" id="hint-modal-title">Clue Card Target</h3>
-      <p class="modal-desc" id="hint-modal-desc">Look for this image target in your surroundings:</p>
+
+      <!-- Scalable Hint Text -->
+      <div style="margin: 12px 0; padding: 12px 14px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 14px; text-align: left;">
+        <div style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+          💡 Explorer's Hint:
+        </div>
+        <div id="hint-modal-text" style="font-size: 13.5px; color: #e2e8f0; line-height: 1.45;">
+          Search for a card showing a hot morning mug or cup of coffee.
+        </div>
+      </div>
+
       <img id="hint-modal-img" class="card-preview-img" src="Assets/Images/Coffe_cup.png" alt="Target Preview" />
-      <button class="btn-action btn-primary" style="width: 100%;" id="btn-close-hint">Got It!</button>
+      
+      <div style="display: flex; gap: 10px;">
+        <button class="btn-action btn-secondary" id="btn-speak-hint" style="flex: 1;">
+          <span>🔊 Read Hint</span>
+        </button>
+        <button class="btn-action btn-primary" style="flex: 1;" id="btn-close-hint">
+          <span>Got It!</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -648,12 +732,15 @@
     // ==========================================
     // TREASURE HUNT CONFIGURATION & CLUES
     // ==========================================
+    // Any change you make to clue, hint, rewardTitle, or rewardDesc
+    // will be automatically spoken by the AI voiceover!
     const HUNT_STEPS = [
       {
         index: 0,
         name: "Coffee Cup",
         icon: "☕",
         clue: "I am warm in the morning and wake up your soul. Look for the steamy vessel that fuels your day!",
+        hint: "Search for a card showing a hot morning mug or cup of coffee.",
         hintImg: "Assets/Images/Coffe_cup.png",
         rewardTitle: "Steamy Cup of Energy Found!",
         rewardDesc: "You uncovered the Coffee Cup! Enjoy the 3D model floating above your card.",
@@ -664,6 +751,7 @@
         name: "Vintage Compass",
         icon: "🧭",
         clue: "I have no voice, but I guide the lost. Across wild oceans and forgotten lands, I always point True North!",
+        hint: "Look for an antique brass nautical compass with a cardinal needle.",
         hintImg: "Assets/Images/Vintage Compass.png",
         rewardTitle: "Vintage Compass Unlocked!",
         rewardDesc: "The ancient brass compass has revealed its secrets. Follow the path ahead!",
@@ -674,6 +762,7 @@
         name: "Golden Microphone",
         icon: "🎙️",
         clue: "I amplify whispers and turn voices into legends. Seek the glittering golden instrument of stars!",
+        hint: "Find the card displaying a glamorous golden studio microphone on a stand.",
         hintImg: "Assets/Images/Golden Microphone.png",
         rewardTitle: "Grand Treasure Discovered!",
         rewardDesc: "The Golden Microphone and Pirate Treasure Chest have appeared! You completed the hunt!",
@@ -686,7 +775,100 @@
     // ==========================================
     let currentStep = 0;
     let soundEnabled = true;
+    let voiceEnabled = true;
     let audioCtx = null;
+
+    // ==========================================
+    // AI VOICE OVER / TEXT-TO-SPEECH (TTS)
+    // ==========================================
+    let availableVoices = [];
+
+    function loadVoices() {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        availableVoices = window.speechSynthesis.getVoices();
+      }
+    }
+
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      loadVoices();
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+
+    function getBestEnglishVoice() {
+      if (!availableVoices.length && window.speechSynthesis) {
+        availableVoices = window.speechSynthesis.getVoices();
+      }
+      // Prioritize natural sounding studio voices if installed on device
+      const natural = availableVoices.find(v =>
+        v.lang.startsWith("en") && (
+          v.name.includes("Natural") ||
+          v.name.includes("Google") ||
+          v.name.includes("Samantha") ||
+          v.name.includes("Siri") ||
+          v.name.includes("Karen") ||
+          v.name.includes("Daniel") ||
+          v.name.includes("Arthur") ||
+          v.name.includes("Alex")
+        )
+      );
+      return natural || availableVoices.find(v => v.lang.startsWith("en")) || availableVoices[0] || null;
+    }
+
+    // Dynamic, scalable voice speaker
+    function speakAI(text) {
+      if (!voiceEnabled || !("speechSynthesis" in window)) return;
+      try {
+        window.speechSynthesis.cancel(); // Stop any pending speech
+
+        const cleanText = text.replace(/<[^>]*>/g, "").trim();
+        if (!cleanText) return;
+
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.rate = 1.0;
+        utterance.pitch = 1.05;
+
+        const voice = getBestEnglishVoice();
+        if (voice) {
+          utterance.voice = voice;
+        }
+
+        const waves = document.getElementById("voice-waves");
+        utterance.onstart = () => {
+          if (waves) waves.classList.add("speaking");
+        };
+        utterance.onend = () => {
+          if (waves) waves.classList.remove("speaking");
+        };
+        utterance.onerror = () => {
+          if (waves) waves.classList.remove("speaking");
+        };
+
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        console.warn("Speech synthesis error:", err);
+      }
+    }
+
+    // Scalable helpers that read live from HUNT_STEPS:
+    function speakClue() {
+      const step = HUNT_STEPS[currentStep];
+      speakAI(`Clue number ${currentStep + 1}: ${step.clue}`);
+    }
+
+    function speakHintText() {
+      const step = HUNT_STEPS[currentStep];
+      const hint = step.hint || step.clue;
+      speakAI(`Explorer's Hint for ${step.name}: ${hint}`);
+    }
+
+    function speakTargetFoundText() {
+      const step = HUNT_STEPS[currentStep];
+      speakAI(`Artifact discovered! ${step.rewardTitle}. ${step.rewardDesc}`);
+    }
+
+    function speakVictoryText() {
+      speakAI("Congratulations! You have completed the AR Treasure Hunt and uncovered every ancient 3D artifact!");
+    }
 
     // Web Audio Synthesizer (Zero network required)
     function playAudioTone(type) {
@@ -796,6 +978,10 @@
       document.getElementById("hint-modal-icon").textContent = step.icon;
       document.getElementById("hint-modal-title").textContent = `Clue Target: ${step.name}`;
       document.getElementById("hint-modal-img").src = step.hintImg;
+      const hintTextEl = document.getElementById("hint-modal-text");
+      if (hintTextEl) {
+        hintTextEl.textContent = step.hint || step.clue;
+      }
 
       // Update visibility of 3D models according to current progress
       HUNT_STEPS.forEach((s, idx) => {
@@ -841,6 +1027,7 @@
         if (currentStep === HUNT_STEPS.length - 1) {
           // Final victory!
           playAudioTone("victory");
+          speakVictoryText();
           document.getElementById("panel-clue-view").style.display = "none";
           document.getElementById("panel-found-view").style.display = "none";
           document.getElementById("panel-victory-view").style.display = "block";
@@ -849,6 +1036,7 @@
           showToast(`🏆 Treasure Hunt Complete!`);
         } else {
           // Intermediate artifact discovered
+          speakTargetFoundText();
           document.getElementById("panel-clue-view").style.display = "none";
           document.getElementById("panel-victory-view").style.display = "none";
           document.getElementById("panel-found-view").style.display = "block";
@@ -878,6 +1066,7 @@
       if (currentStep < HUNT_STEPS.length - 1) {
         currentStep++;
         updateUI();
+        speakClue();
         showToast(`🧭 Next Clue #${currentStep + 1} Activated!`);
       }
     });
@@ -885,8 +1074,12 @@
     // Reset Hunt (Top button & Victory bottom panel button)
     function resetGame() {
       currentStep = 0;
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
       document.getElementById("hint-modal").classList.remove("visible");
       updateUI();
+      speakClue();
       showToast("🔄 Hunt restarted! Find Clue #1!");
     }
 
@@ -900,6 +1093,37 @@
     document.getElementById("btn-close-hint").addEventListener("click", () => {
       document.getElementById("hint-modal").classList.remove("visible");
     });
+
+    // Voice Narration Action Listeners
+    document.getElementById("btn-speak-clue").addEventListener("click", () => {
+      speakClue();
+    });
+    document.getElementById("btn-speak-found").addEventListener("click", () => {
+      speakTargetFoundText();
+    });
+    document.getElementById("btn-speak-victory").addEventListener("click", () => {
+      speakVictoryText();
+    });
+    document.getElementById("btn-speak-hint").addEventListener("click", () => {
+      speakHintText();
+    });
+
+    // AI Voice Toggle
+    document.getElementById("btn-voice").addEventListener("click", () => {
+      voiceEnabled = !voiceEnabled;
+      if (!voiceEnabled && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+      document.getElementById("btn-voice").textContent = voiceEnabled ? "🎙️" : "🔇";
+      showToast(voiceEnabled ? "🎙️ AI Voiceover Enabled" : "🔇 AI Voiceover Muted");
+    });
+
+    // Prime voices on first user gesture (satisfies mobile autoplay restrictions)
+    window.addEventListener("click", () => {
+      if (!availableVoices.length && window.speechSynthesis) {
+        loadVoices();
+      }
+    }, { once: true });
 
     // ==========================================
     // FLASHLIGHT / TORCH TOGGLE
