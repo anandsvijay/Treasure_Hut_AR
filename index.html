@@ -504,77 +504,20 @@
   <!-- AR Scene Container -->
   <div id="ar-container">
     <a-scene
+      id="ar-scene"
       mindar-image="imageTargetSrc: Assets/Targets/targets.mind; uiScanning: no; filterMinCF: 0.0001; filterBeta: 0.001; missTolerance: 5;"
       color-space="sRGB"
       renderer="colorManagement: true, physicallyCorrectLights: true"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false">
       
-      <a-assets>
-        <!-- 3D Models in Assets/Models -->
-        <a-asset-item id="modelCoffeeCup" src="Assets/Models/coffee_cup.glb"></a-asset-item>
-        <a-asset-item id="modelCompass" src="Assets/Models/vintage_compass.glb"></a-asset-item>
-        <a-asset-item id="modelMic" src="Assets/Models/golden_microphone.glb"></a-asset-item>
-        <a-asset-item id="modelChest" src="Assets/Models/treasure_chest.glb"></a-asset-item>
-      </a-assets>
-
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <!-- Ambient Lighting for vibrant 3D rendering -->
+      <!-- Ambient & directional lighting for 3D PBR rendering -->
       <a-light type="ambient" color="#ffffff" intensity="1.2"></a-light>
       <a-light type="directional" color="#fffaed" intensity="1.5" position="1 2 1"></a-light>
 
-      <!-- ================= TARGET 0: COFFEE CUP ================= -->
-      <a-entity id="ar-target-0" mindar-image-target="targetIndex: 0">
-        <!-- Floating & Rotating Coffee Cup 3D Model -->
-        <a-entity
-          id="visual-target-0"
-          position="0 0 0.1"
-          rotation="20 0 0"
-          scale="1.2 1.2 1.2"
-          animation="property: rotation; to: 20 360 0; loop: true; dur: 9000; easing: linear">
-          <a-gltf-model src="#modelCoffeeCup"></a-gltf-model>
-          <a-light type="point" intensity="1.8" distance="2" position="0 0.4 0.3" color="#ffeedd"></a-light>
-        </a-entity>
-      </a-entity>
-
-      <!-- ================= TARGET 1: VINTAGE COMPASS ================= -->
-      <a-entity id="ar-target-1" mindar-image-target="targetIndex: 1">
-        <!-- Floating & Rotating Vintage Compass 3D Model -->
-        <a-entity
-          id="visual-target-1"
-          position="0 0 0.12"
-          rotation="30 0 0"
-          scale="0.45 0.45 0.45"
-          animation="property: rotation; to: 30 360 0; loop: true; dur: 10000; easing: linear">
-          <a-gltf-model src="#modelCompass"></a-gltf-model>
-          <a-light type="point" intensity="2.0" distance="2" position="0 0.3 0.3" color="#ffe8aa"></a-light>
-        </a-entity>
-      </a-entity>
-
-      <!-- ================= TARGET 2: GOLDEN MICROPHONE & TREASURE CHEST ================= -->
-      <a-entity id="ar-target-2" mindar-image-target="targetIndex: 2">
-        <!-- Floating & Rotating Golden Microphone 3D Model -->
-        <a-entity
-          id="visual-target-2"
-          position="0 -0.15 0.1"
-          rotation="15 0 0"
-          scale="0.38 0.38 0.38"
-          animation="property: rotation; to: 15 360 0; loop: true; dur: 8500; easing: linear">
-          <a-gltf-model src="#modelMic"></a-gltf-model>
-          
-          <!-- Auxiliary celebratory Treasure Chest sitting beside the mic -->
-          <a-gltf-model
-            src="#modelChest"
-            position="0.55 -0.15 0.1"
-            scale="0.45 0.45 0.45"
-            rotation="0 -25 0">
-          </a-gltf-model>
-
-          <a-light type="point" intensity="2.5" distance="3" position="0 0.5 0.4" color="#ffd700"></a-light>
-        </a-entity>
-      </a-entity>
-
+      <!-- Target entities and 3D models are injected dynamically from TREASURE_HUNT_CONFIG -->
     </a-scene>
   </div>
 
@@ -598,18 +541,8 @@
         </div>
       </div>
 
-      <!-- Step Badges -->
-      <div class="tracker-bar">
-        <div class="step-pill active" id="badge-0">
-          <span>☕</span> <span>1. Coffee Cup</span>
-        </div>
-        <div class="step-pill" id="badge-1">
-          <span>🧭</span> <span>2. Compass</span>
-        </div>
-        <div class="step-pill" id="badge-2">
-          <span>🎙️</span> <span>3. Golden Mic</span>
-        </div>
-      </div>
+      <!-- Step Badges (Generated dynamically from TREASURE_HUNT_CONFIG) -->
+      <div class="tracker-bar" id="tracker-bar"></div>
     </div>
 
     <!-- Center Reticle -->
@@ -729,46 +662,81 @@
 
   <!-- Game Logic Script -->
   <script>
-    // ==========================================
-    // TREASURE HUNT CONFIGURATION & CLUES
-    // ==========================================
-    // Any change you make to clue, hint, rewardTitle, or rewardDesc
-    // will be automatically spoken by the AI voiceover!
-    const HUNT_STEPS = [
-      {
-        index: 0,
-        name: "Coffee Cup",
-        icon: "☕",
-        clue: "I am warm in the morning and wake up your soul. Look for the steamy vessel that fuels your day!",
-        hint: "Search for a card showing a hot morning mug or cup of coffee.",
-        hintImg: "Assets/Images/Coffe_cup.png",
-        rewardTitle: "Steamy Cup of Energy Found!",
-        rewardDesc: "You uncovered the Coffee Cup! Enjoy the 3D model floating above your card.",
-        modelId: "visual-target-0"
-      },
-      {
-        index: 1,
-        name: "Vintage Compass",
-        icon: "🧭",
-        clue: "I have no voice, but I guide the lost. Across wild oceans and forgotten lands, I always point True North!",
-        hint: "Look for an antique brass nautical compass with a cardinal needle.",
-        hintImg: "Assets/Images/Vintage Compass.png",
-        rewardTitle: "Vintage Compass Unlocked!",
-        rewardDesc: "The ancient brass compass has revealed its secrets. Follow the path ahead!",
-        modelId: "visual-target-1"
-      },
-      {
-        index: 2,
-        name: "Golden Microphone",
-        icon: "🎙️",
-        clue: "I amplify whispers and turn voices into legends. Seek the glittering golden instrument of stars!",
-        hint: "Find the card displaying a glamorous golden studio microphone on a stand.",
-        hintImg: "Assets/Images/Golden Microphone.png",
-        rewardTitle: "Grand Treasure Discovered!",
-        rewardDesc: "The Golden Microphone and Pirate Treasure Chest have appeared! You completed the hunt!",
-        modelId: "visual-target-2"
-      }
-    ];
+    // =========================================================================
+    // 🎯 MASTER TREASURE HUNT CONFIGURATION
+    // -------------------------------------------------------------------------
+    // 100% SCALABLE & CONFIGURED IN ONE PLACE!
+    // To replace 3D models, card images, clues, hints, or add new targets,
+    // simply edit the values below in ONE GO! Everything adapts automatically.
+    // =========================================================================
+    const TREASURE_HUNT_CONFIG = {
+      // Path to compiled MindAR targets file (msgpack .mind)
+      targetMindSrc: "Assets/Targets/targets.mind",
+
+      // Target tracking sensitivity
+      filterMinCF: 0.0001,
+      filterBeta: 0.001,
+      missTolerance: 5,
+
+      // List of all treasure hunt targets in sequential order (0, 1, 2, ... N):
+      steps: [
+        {
+          name: "Coffee Cup",
+          icon: "☕",
+          cardImage: "Assets/Images/Coffe_cup.png", // Image target reference
+          clue: "I am warm in the morning and wake up your soul. Look for the steamy vessel that fuels your day!",
+          hint: "Search for a card showing a hot morning mug or cup of coffee.",
+          rewardTitle: "Steamy Cup of Energy Found!",
+          rewardDesc: "You uncovered the Coffee Cup! Enjoy the 3D model floating above your card.",
+          model: {
+            src: "Assets/Models/coffee_cup.glb", // 3D model path (.glb / .gltf)
+            scale: "1.2 1.2 1.2",
+            position: "0 0 0.1",
+            rotation: "20 0 0",
+            spinDur: 9000 // duration in ms for 360-degree rotation (0 to disable spin)
+          }
+        },
+        {
+          name: "Vintage Compass",
+          icon: "🧭",
+          cardImage: "Assets/Images/Vintage Compass.png",
+          clue: "I have no voice, but I guide the lost. Across wild oceans and forgotten lands, I always point True North!",
+          hint: "Look for an antique brass nautical compass with a cardinal needle.",
+          rewardTitle: "Vintage Compass Unlocked!",
+          rewardDesc: "The ancient brass compass has revealed its secrets. Follow the path ahead!",
+          model: {
+            src: "Assets/Models/vintage_compass.glb",
+            scale: "0.45 0.45 0.45",
+            position: "0 0 0.12",
+            rotation: "30 0 0",
+            spinDur: 10000
+          }
+        },
+        {
+          name: "Golden Microphone",
+          icon: "🎙️",
+          cardImage: "Assets/Images/Golden Microphone.png",
+          clue: "I amplify whispers and turn voices into legends. Seek the glittering golden instrument of stars!",
+          hint: "Find the card displaying a glamorous golden studio microphone on a stand.",
+          rewardTitle: "Grand Treasure Discovered!",
+          rewardDesc: "The Golden Microphone and Pirate Treasure Chest have appeared! You completed the hunt!",
+          model: {
+            src: "Assets/Models/golden_microphone.glb",
+            scale: "0.38 0.38 0.38",
+            position: "0 -0.15 0.1",
+            rotation: "15 0 0",
+            spinDur: 8500,
+            // Optional extra 3D model (e.g. treasure chest)
+            extraModel: {
+              src: "Assets/Models/treasure_chest.glb",
+              scale: "0.45 0.45 0.45",
+              position: "0.55 -0.15 0.1",
+              rotation: "0 -25 0"
+            }
+          }
+        }
+      ]
+    };
 
     // ==========================================
     // STATE MANAGEMENT
@@ -873,20 +841,20 @@
       }
     }
 
-    // Scalable helpers that read live from HUNT_STEPS:
+    // Scalable helpers that read live from TREASURE_HUNT_CONFIG.steps:
     function speakClue() {
-      const step = HUNT_STEPS[currentStep];
+      const step = TREASURE_HUNT_CONFIG.steps[currentStep];
       speakAI(`Clue number ${currentStep + 1}: ${step.clue}`);
     }
 
     function speakHintText() {
-      const step = HUNT_STEPS[currentStep];
+      const step = TREASURE_HUNT_CONFIG.steps[currentStep];
       const hint = step.hint || step.clue;
       speakAI(`Explorer's Hint for ${step.name}: ${hint}`);
     }
 
     function speakTargetFoundText() {
-      const step = HUNT_STEPS[currentStep];
+      const step = TREASURE_HUNT_CONFIG.steps[currentStep];
       speakAI(`Artifact discovered! ${step.rewardTitle}. ${step.rewardDesc}`);
     }
 
@@ -968,10 +936,97 @@
     }
 
     // ==========================================
+    // DYNAMIC AR SCENE & BADGE BUILDERS
+    // ==========================================
+    // Automatically builds MindAR target entities & 3D models from TREASURE_HUNT_CONFIG
+    function buildDynamicARScene() {
+      const sceneEl = document.getElementById("ar-scene");
+      if (!sceneEl) return;
+
+      // Update MindAR image tracking configuration
+      sceneEl.setAttribute(
+        "mindar-image",
+        `imageTargetSrc: ${TREASURE_HUNT_CONFIG.targetMindSrc}; uiScanning: no; filterMinCF: ${TREASURE_HUNT_CONFIG.filterMinCF}; filterBeta: ${TREASURE_HUNT_CONFIG.filterBeta}; missTolerance: ${TREASURE_HUNT_CONFIG.missTolerance};`
+      );
+
+      TREASURE_HUNT_CONFIG.steps.forEach((step, idx) => {
+        // 1. MindAR Target Entity
+        const targetEntity = document.createElement("a-entity");
+        targetEntity.id = `ar-target-${idx}`;
+        targetEntity.setAttribute("mindar-image-target", `targetIndex: ${idx}`);
+
+        // 2. Visual Model Container (supports position, rotation, scale, animations)
+        const visualEntity = document.createElement("a-entity");
+        visualEntity.id = `visual-target-${idx}`;
+        visualEntity.setAttribute("position", step.model.position || "0 0 0.1");
+        visualEntity.setAttribute("rotation", step.model.rotation || "0 0 0");
+        visualEntity.setAttribute("scale", step.model.scale || "1 1 1");
+
+        // Optional 360-degree rotation animation
+        if (step.model.spinDur && step.model.spinDur > 0) {
+          const rx = (step.model.rotation || "0 0 0").split(" ")[0] || "0";
+          visualEntity.setAttribute(
+            "animation",
+            `property: rotation; to: ${rx} 360 0; loop: true; dur: ${step.model.spinDur}; easing: linear`
+          );
+        }
+
+        // 3. Primary 3D Model (.glb / .gltf)
+        const modelEl = document.createElement("a-gltf-model");
+        modelEl.setAttribute("src", step.model.src);
+        visualEntity.appendChild(modelEl);
+
+        // 4. Optional Extra Model (e.g. treasure chest)
+        if (step.model.extraModel) {
+          const extraEl = document.createElement("a-gltf-model");
+          extraEl.setAttribute("src", step.model.extraModel.src);
+          extraEl.setAttribute("position", step.model.extraModel.position || "0.55 -0.15 0.1");
+          extraEl.setAttribute("rotation", step.model.extraModel.rotation || "0 -25 0");
+          extraEl.setAttribute("scale", step.model.extraModel.scale || "0.45 0.45 0.45");
+          visualEntity.appendChild(extraEl);
+        }
+
+        // 5. Point light to illuminate 3D model
+        const lightEl = document.createElement("a-light");
+        lightEl.setAttribute("type", "point");
+        lightEl.setAttribute("intensity", "2.0");
+        lightEl.setAttribute("distance", "2.5");
+        lightEl.setAttribute("position", "0 0.4 0.3");
+        lightEl.setAttribute("color", "#fff8ee");
+        visualEntity.appendChild(lightEl);
+
+        targetEntity.appendChild(visualEntity);
+        sceneEl.appendChild(targetEntity);
+
+        // Attach target tracking event listeners
+        targetEntity.addEventListener("targetFound", () => {
+          handleTargetFound(idx);
+        });
+        targetEntity.addEventListener("targetLost", () => {
+          document.getElementById("reticle").classList.remove("found");
+        });
+      });
+    }
+
+    // Automatically generates progress tracker badges in top bar
+    function buildDynamicTrackerBadges() {
+      const container = document.getElementById("tracker-bar");
+      if (!container) return;
+      container.innerHTML = "";
+      TREASURE_HUNT_CONFIG.steps.forEach((step, idx) => {
+        const badge = document.createElement("div");
+        badge.id = `badge-${idx}`;
+        badge.className = `step-pill ${idx === 0 ? "active" : ""}`;
+        badge.innerHTML = `<span>${step.icon}</span> <span>${idx + 1}. ${step.name}</span>`;
+        container.appendChild(badge);
+      });
+    }
+
+    // ==========================================
     // UI UPDATES
     // ==========================================
     function updateUI() {
-      const step = HUNT_STEPS[currentStep];
+      const step = TREASURE_HUNT_CONFIG.steps[currentStep];
 
       // Reset panel views to the active clue
       document.getElementById("panel-clue-view").style.display = "block";
@@ -982,9 +1037,10 @@
       panel.classList.remove("found-glow", "victory-glow");
 
       // Update header & badges
-      document.getElementById("hunt-status").textContent = `Seek Relic ${currentStep + 1} of ${HUNT_STEPS.length}`;
-      HUNT_STEPS.forEach((s, idx) => {
+      document.getElementById("hunt-status").textContent = `Seek Relic ${currentStep + 1} of ${TREASURE_HUNT_CONFIG.steps.length}`;
+      TREASURE_HUNT_CONFIG.steps.forEach((s, idx) => {
         const badge = document.getElementById(`badge-${idx}`);
+        if (!badge) return;
         badge.classList.remove("active", "completed");
         if (idx < currentStep) {
           badge.classList.add("completed");
@@ -1001,36 +1057,18 @@
       // Update Hint Modal data
       document.getElementById("hint-modal-icon").textContent = step.icon;
       document.getElementById("hint-modal-title").textContent = `Clue Target: ${step.name}`;
-      document.getElementById("hint-modal-img").src = step.hintImg;
+      document.getElementById("hint-modal-img").src = step.cardImage;
       const hintTextEl = document.getElementById("hint-modal-text");
       if (hintTextEl) {
         hintTextEl.textContent = step.hint || step.clue;
       }
 
       // Update visibility of 3D models according to current progress
-      HUNT_STEPS.forEach((s, idx) => {
-        const el = document.getElementById(s.modelId);
+      TREASURE_HUNT_CONFIG.steps.forEach((s, idx) => {
+        const el = document.getElementById(`visual-target-${idx}`);
         if (el) {
           el.setAttribute("visible", idx <= currentStep);
         }
-      });
-    }
-
-    // ==========================================
-    // AR TARGET DETECTION HANDLERS
-    // ==========================================
-    function setupTargetListeners() {
-      HUNT_STEPS.forEach((step, idx) => {
-        const targetEntity = document.getElementById(`ar-target-${idx}`);
-        if (!targetEntity) return;
-
-        targetEntity.addEventListener("targetFound", () => {
-          handleTargetFound(idx);
-        });
-
-        targetEntity.addEventListener("targetLost", () => {
-          document.getElementById("reticle").classList.remove("found");
-        });
       });
     }
 
@@ -1044,11 +1082,11 @@
         playAudioTone("found");
         launchConfetti();
 
-        const step = HUNT_STEPS[currentStep];
+        const step = TREASURE_HUNT_CONFIG.steps[currentStep];
         const panel = document.getElementById("clue-panel");
 
         // Keep AR camera view 100% visible: Update bottom panel directly!
-        if (currentStep === HUNT_STEPS.length - 1) {
+        if (currentStep === TREASURE_HUNT_CONFIG.steps.length - 1) {
           // Final victory!
           playAudioTone("victory");
           speakVictoryText();
@@ -1081,13 +1119,13 @@
         showToast(`🔒 Follow Clue #${currentStep + 1} first!`);
       } else {
         // Already found past target
-        showToast(`✅ You already collected ${HUNT_STEPS[scannedIndex].name}!`);
+        showToast(`✅ You already collected ${TREASURE_HUNT_CONFIG.steps[scannedIndex].name}!`);
       }
     }
 
     // Proceed to Next Clue Button (in bottom panel)
     document.getElementById("btn-next-clue").addEventListener("click", () => {
-      if (currentStep < HUNT_STEPS.length - 1) {
+      if (currentStep < TREASURE_HUNT_CONFIG.steps.length - 1) {
         currentStep++;
         updateUI();
         speakClue();
@@ -1281,8 +1319,9 @@
 
     // Initialize on page load
     window.addEventListener("DOMContentLoaded", () => {
+      buildDynamicARScene();
+      buildDynamicTrackerBadges();
       updateUI();
-      setupTargetListeners();
     });
   </script>
 </body>
