@@ -27,6 +27,12 @@
       color: #fff;
     }
 
+    /* MindAR default UI removal */
+    .mindar-ui-scanning,
+    .mindar-ui-loading {
+      display: none !important;
+    }
+
     /* Fullscreen AR container */
     #ar-container {
       position: absolute;
@@ -286,6 +292,44 @@
       background: rgba(255, 255, 255, 0.18);
     }
 
+    .clue-panel.found-glow {
+      border-color: #10b981;
+      box-shadow: 0 0 25px rgba(16, 185, 129, 0.4), 0 -8px 36px rgba(0, 0, 0, 0.5);
+    }
+
+    .clue-panel.victory-glow {
+      border-color: #fbbf24;
+      box-shadow: 0 0 30px rgba(251, 191, 36, 0.45), 0 -8px 36px rgba(0, 0, 0, 0.5);
+    }
+
+    .btn-torch-on {
+      background: linear-gradient(135deg, #f59e0b, #eab308) !important;
+      color: #1e1b4b !important;
+      font-weight: 700 !important;
+      box-shadow: 0 0 16px rgba(245, 158, 11, 0.6) !important;
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #059669, #10b981);
+      color: white;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-success:active {
+      transform: scale(0.97);
+    }
+
+    .btn-victory {
+      background: linear-gradient(135deg, #d97706, #f59e0b);
+      color: #1e1b4b;
+      font-weight: 800;
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.5);
+    }
+
+    .btn-victory:active {
+      transform: scale(0.97);
+    }
+
     /* Modal / Popups */
     .modal-overlay {
       position: absolute;
@@ -409,7 +453,7 @@
   <!-- AR Scene Container -->
   <div id="ar-container">
     <a-scene
-      mindar-image="imageTargetSrc: Assets/Targets/targets.mind; filterMinCF: 0.0001; filterBeta: 0.001; missTolerance: 5;"
+      mindar-image="imageTargetSrc: Assets/Targets/targets.mind; uiScanning: no; filterMinCF: 0.0001; filterBeta: 0.001; missTolerance: 5;"
       color-space="sRGB"
       renderer="colorManagement: true, physicallyCorrectLights: true"
       vr-mode-ui="enabled: false"
@@ -526,22 +570,61 @@
     </div>
 
     <!-- Bottom Clue Panel -->
-    <div class="clue-panel">
-      <div class="clue-header">
-        <span class="clue-tag" id="clue-step-tag">🔍 CURRENT CLUE #1</span>
-        <span style="font-size: 12px; color: #94a3b8;" id="clue-target-name">Target: Coffee Cup</span>
+    <div class="clue-panel" id="clue-panel">
+      
+      <!-- 1. ACTIVE CLUE VIEW -->
+      <div id="panel-clue-view">
+        <div class="clue-header">
+          <span class="clue-tag" id="clue-step-tag">🔍 CURRENT CLUE #1</span>
+          <span style="font-size: 12px; color: #94a3b8;" id="clue-target-name">Target: Coffee Cup</span>
+        </div>
+        <div class="clue-text" id="clue-text">
+          "I am warm in the morning and wake up your soul. Look for the steamy vessel that fuels your day!"
+        </div>
+        <div class="clue-actions">
+          <button class="btn-action btn-secondary" id="btn-hint">
+            <span>💡 Peek Card Hint</span>
+          </button>
+          <button class="btn-action btn-primary" id="btn-torch">
+            <span>🔦 Flashlight</span>
+          </button>
+        </div>
       </div>
-      <div class="clue-text" id="clue-text">
-        "I am warm in the morning and wake up your soul. Look for the steamy vessel that fuels your day!"
+
+      <!-- 2. TARGET FOUND VIEW (replaces clue text in the panel without blocking camera!) -->
+      <div id="panel-found-view" style="display: none;">
+        <div class="clue-header">
+          <span class="clue-tag" style="color: #34d399;">✨ TARGET DISCOVERED!</span>
+          <span style="font-size: 12px; color: #a7f3d0;" id="found-target-badge">☕ Coffee Cup</span>
+        </div>
+        <div style="margin-bottom: 12px;">
+          <div id="found-title" style="font-size: 15px; font-weight: 700; color: #f8fafc; margin-bottom: 4px;">Steamy Cup of Energy Found!</div>
+          <div id="found-desc" style="font-size: 13px; color: #cbd5e1; line-height: 1.4;">Enjoy the 3D model floating above your card.</div>
+        </div>
+        <div class="clue-actions">
+          <button class="btn-action btn-success" id="btn-next-clue" style="width: 100%;">
+            <span>Proceed to Next Clue ➡️</span>
+          </button>
+        </div>
       </div>
-      <div class="clue-actions">
-        <button class="btn-action btn-secondary" id="btn-hint">
-          <span>💡 Peek Card Hint</span>
-        </button>
-        <button class="btn-action btn-primary" id="btn-status-help">
-          <span>🎯 Aim Camera at Card</span>
-        </button>
+
+      <!-- 3. VICTORY VIEW (ending state in bottom panel without blocking camera!) -->
+      <div id="panel-victory-view" style="display: none;">
+        <div class="clue-header">
+          <span class="clue-tag" style="color: #fbbf24;">🏆 TREASURE HUNT COMPLETE!</span>
+          <span style="font-size: 12px; color: #fde68a;">3 / 3 Relics Found</span>
+        </div>
+        <div style="margin-bottom: 12px;">
+          <div style="font-size: 15px; font-weight: 800; color: #fbbf24; margin-bottom: 4px;">Treasure Hunt Master!</div>
+          <div style="font-size: 13px; color: #cbd5e1; line-height: 1.4;">All 3 ancient 3D relics are unlocked! Move around to view them in AR.</div>
+        </div>
+        <div class="clue-actions">
+          <button class="btn-action btn-victory" id="btn-victory-reset" style="width: 100%;">
+            <span>Restart Hunt 🔄</span>
+          </button>
+        </div>
       </div>
+
     </div>
 
   </div>
@@ -557,36 +640,6 @@
       <p class="modal-desc" id="hint-modal-desc">Look for this image target in your surroundings:</p>
       <img id="hint-modal-img" class="card-preview-img" src="Assets/Images/Coffe_cup.png" alt="Target Preview" />
       <button class="btn-action btn-primary" style="width: 100%;" id="btn-close-hint">Got It!</button>
-    </div>
-  </div>
-
-  <!-- Found Celebration Modal -->
-  <div class="modal-overlay" id="found-modal">
-    <div class="modal-card">
-      <div class="modal-icon" id="found-modal-icon">🎉</div>
-      <h3 class="modal-title" id="found-modal-title">Artifact Discovered!</h3>
-      <p class="modal-desc" id="found-modal-desc">Great job! The 3D model has emerged.</p>
-      <button class="btn-action btn-primary" style="width: 100%;" id="btn-next-clue">
-        <span>Proceed to Next Clue ➡️</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- Victory Complete Modal -->
-  <div class="modal-overlay" id="victory-modal">
-    <div class="modal-card">
-      <div class="modal-icon">🏆</div>
-      <h3 class="modal-title" style="color: #fbbf24;">Treasure Hunt Master!</h3>
-      <p class="modal-desc">
-        Congratulations! You solved all riddles and uncovered every ancient 3D artifact:
-        <br /><br />
-        ☕ <b>Coffee Cup</b><br />
-        🧭 <b>Vintage Compass</b><br />
-        🎙️ <b>Golden Microphone & Treasure Chest</b>
-      </p>
-      <button class="btn-action btn-primary" style="width: 100%;" id="btn-play-again">
-        <span>Play Hunt Again 🔄</span>
-      </button>
     </div>
   </div>
 
@@ -714,6 +767,14 @@
     function updateUI() {
       const step = HUNT_STEPS[currentStep];
 
+      // Reset panel views to the active clue
+      document.getElementById("panel-clue-view").style.display = "block";
+      document.getElementById("panel-found-view").style.display = "none";
+      document.getElementById("panel-victory-view").style.display = "none";
+
+      const panel = document.getElementById("clue-panel");
+      panel.classList.remove("found-glow", "victory-glow");
+
       // Update header & badges
       document.getElementById("hunt-status").textContent = `Seek Relic ${currentStep + 1} of ${HUNT_STEPS.length}`;
       HUNT_STEPS.forEach((s, idx) => {
@@ -737,7 +798,6 @@
       document.getElementById("hint-modal-img").src = step.hintImg;
 
       // Update visibility of 3D models according to current progress
-      // (Only discovered targets remain visible, future targets stay hidden)
       HUNT_STEPS.forEach((s, idx) => {
         const el = document.getElementById(s.modelId);
         if (el) {
@@ -775,23 +835,31 @@
         launchConfetti();
 
         const step = HUNT_STEPS[currentStep];
-        showToast(`✨ Found ${step.name}!`);
+        const panel = document.getElementById("clue-panel");
 
-        // Check if final target or intermediate target
+        // Keep AR camera view 100% visible: Update bottom panel directly!
         if (currentStep === HUNT_STEPS.length - 1) {
           // Final victory!
           playAudioTone("victory");
-          setTimeout(() => {
-            document.getElementById("victory-modal").classList.add("visible");
-          }, 600);
+          document.getElementById("panel-clue-view").style.display = "none";
+          document.getElementById("panel-found-view").style.display = "none";
+          document.getElementById("panel-victory-view").style.display = "block";
+          panel.classList.remove("found-glow");
+          panel.classList.add("victory-glow");
+          showToast(`🏆 Treasure Hunt Complete!`);
         } else {
-          // Show artifact reward & unlock next clue
-          setTimeout(() => {
-            document.getElementById("found-modal-icon").textContent = step.icon;
-            document.getElementById("found-modal-title").textContent = step.rewardTitle;
-            document.getElementById("found-modal-desc").textContent = step.rewardDesc;
-            document.getElementById("found-modal").classList.add("visible");
-          }, 500);
+          // Intermediate artifact discovered
+          document.getElementById("panel-clue-view").style.display = "none";
+          document.getElementById("panel-victory-view").style.display = "none";
+          document.getElementById("panel-found-view").style.display = "block";
+
+          document.getElementById("found-target-badge").textContent = `${step.icon} ${step.name}`;
+          document.getElementById("found-title").textContent = step.rewardTitle;
+          document.getElementById("found-desc").textContent = step.rewardDesc;
+
+          panel.classList.remove("victory-glow");
+          panel.classList.add("found-glow");
+          showToast(`✨ Found ${step.name}!`);
         }
 
       } else if (scannedIndex > currentStep) {
@@ -805,9 +873,8 @@
       }
     }
 
-    // Proceed to Next Clue
+    // Proceed to Next Clue Button (in bottom panel)
     document.getElementById("btn-next-clue").addEventListener("click", () => {
-      document.getElementById("found-modal").classList.remove("visible");
       if (currentStep < HUNT_STEPS.length - 1) {
         currentStep++;
         updateUI();
@@ -815,18 +882,16 @@
       }
     });
 
-    // Reset Hunt
+    // Reset Hunt (Top button & Victory bottom panel button)
     function resetGame() {
       currentStep = 0;
-      document.getElementById("found-modal").classList.remove("visible");
-      document.getElementById("victory-modal").classList.remove("visible");
       document.getElementById("hint-modal").classList.remove("visible");
       updateUI();
       showToast("🔄 Hunt restarted! Find Clue #1!");
     }
 
     document.getElementById("btn-reset").addEventListener("click", resetGame);
-    document.getElementById("btn-play-again").addEventListener("click", resetGame);
+    document.getElementById("btn-victory-reset").addEventListener("click", resetGame);
 
     // Hint Modal Toggle
     document.getElementById("btn-hint").addEventListener("click", () => {
@@ -835,6 +900,74 @@
     document.getElementById("btn-close-hint").addEventListener("click", () => {
       document.getElementById("hint-modal").classList.remove("visible");
     });
+
+    // ==========================================
+    // FLASHLIGHT / TORCH TOGGLE
+    // ==========================================
+    let torchOn = false;
+    let cameraTrack = null;
+
+    async function getCameraVideoTrack() {
+      if (cameraTrack && cameraTrack.readyState === "live") {
+        return cameraTrack;
+      }
+      // Check active HTML5 video elements created by MindAR
+      const videos = document.querySelectorAll("video");
+      for (const v of videos) {
+        if (v.srcObject && typeof v.srcObject.getVideoTracks === "function") {
+          const tracks = v.srcObject.getVideoTracks();
+          if (tracks.length > 0) {
+            cameraTrack = tracks[0];
+            return cameraTrack;
+          }
+        }
+      }
+      // Check MindAR scene system video
+      const sceneEl = document.querySelector("a-scene");
+      if (sceneEl && sceneEl.systems && sceneEl.systems["mindar-image-system"]) {
+        const video = sceneEl.systems["mindar-image-system"].video;
+        if (video && video.srcObject && typeof video.srcObject.getVideoTracks === "function") {
+          const tracks = video.srcObject.getVideoTracks();
+          if (tracks.length > 0) {
+            cameraTrack = tracks[0];
+            return cameraTrack;
+          }
+        }
+      }
+      return null;
+    }
+
+    async function toggleFlashlight() {
+      const track = await getCameraVideoTrack();
+      if (!track) {
+        showToast("⚠️ Camera not active yet");
+        return;
+      }
+
+      const capabilities = typeof track.getCapabilities === "function" ? track.getCapabilities() : {};
+      if (!capabilities.torch) {
+        showToast("🔦 Flashlight not supported on this device/browser");
+        return;
+      }
+
+      try {
+        torchOn = !torchOn;
+        await track.applyConstraints({
+          advanced: [{ torch: torchOn }]
+        });
+        const btn = document.getElementById("btn-torch");
+        if (btn) {
+          btn.innerHTML = torchOn ? "<span>🔦 Torch ON</span>" : "<span>🔦 Torch OFF</span>";
+          btn.classList.toggle("btn-torch-on", torchOn);
+        }
+        showToast(torchOn ? "🔦 Flashlight Turned ON" : "🔦 Flashlight Turned OFF");
+      } catch (err) {
+        console.error("Torch error:", err);
+        showToast("⚠️ Unable to toggle flashlight");
+      }
+    }
+
+    document.getElementById("btn-torch").addEventListener("click", toggleFlashlight);
 
     // Sound Toggle
     document.getElementById("btn-sound").addEventListener("click", () => {
