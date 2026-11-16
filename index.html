@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <!-- Prevent aggressive mobile browser caching of HTML -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>AR Treasure Hunt Adventure</title>
   
   <!-- A-Frame and MindAR Libraries -->
@@ -690,7 +694,7 @@
           rewardDesc: "You uncovered the Coffee Cup! Enjoy the 3D model floating above your card.",
           model: {
             src: "Assets/Models/cup_of_coffee3.glb", // 3D model path (.glb / .gltf)
-            scale: "4 4 4",
+            scale: "1 1 1",
             position: "0 0 0.1",
             rotation: "10 0 0",
             spinDur: 9000 // duration in ms for 360-degree rotation (0 to disable spin)
@@ -955,12 +959,12 @@
         targetEntity.id = `ar-target-${idx}`;
         targetEntity.setAttribute("mindar-image-target", `targetIndex: ${idx}`);
 
-        // 2. Visual Model Container (supports position, rotation, scale, animations)
+        // 2. Visual Model Container (supports position, rotation, animations)
         const visualEntity = document.createElement("a-entity");
         visualEntity.id = `visual-target-${idx}`;
         visualEntity.setAttribute("position", step.model.position || "0 0 0.1");
         visualEntity.setAttribute("rotation", step.model.rotation || "0 0 0");
-        visualEntity.setAttribute("scale", step.model.scale || "1 1 1");
+        visualEntity.setAttribute("scale", "1 1 1");
 
         // Optional 360-degree rotation animation
         if (step.model.spinDur && step.model.spinDur > 0) {
@@ -974,6 +978,19 @@
         // 3. Primary 3D Model (.glb / .gltf)
         const modelEl = document.createElement("a-gltf-model");
         modelEl.setAttribute("src", step.model.src);
+        modelEl.setAttribute("scale", step.model.scale || "1 1 1");
+
+        // Guarantee scale is enforced directly on Three.js Object3D hierarchy when model loads
+        modelEl.addEventListener("model-loaded", () => {
+          const scaleStr = String(step.model.scale || "1 1 1").trim();
+          const parts = scaleStr.split(/\s+/).map(Number);
+          const sx = !isNaN(parts[0]) ? parts[0] : 1;
+          const sy = parts.length > 1 && !isNaN(parts[1]) ? parts[1] : sx;
+          const sz = parts.length > 2 && !isNaN(parts[2]) ? parts[2] : sx;
+          if (modelEl.object3D) {
+            modelEl.object3D.scale.set(sx, sy, sz);
+          }
+        });
         visualEntity.appendChild(modelEl);
 
         // 4. Optional Extra Model (e.g. treasure chest)
@@ -1317,12 +1334,19 @@
       canvas.height = window.innerHeight;
     });
 
-    // Initialize on page load
-    window.addEventListener("DOMContentLoaded", () => {
+    // Initialize on page load (robust readyState checking)
+    function initApp() {
       buildDynamicARScene();
       buildDynamicTrackerBadges();
       updateUI();
-    });
+      console.log("Treasure Hunt loaded. Step 0 scale:", TREASURE_HUNT_CONFIG.steps[0].model.scale);
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initApp);
+    } else {
+      initApp();
+    }
   </script>
 </body>
 </html>
