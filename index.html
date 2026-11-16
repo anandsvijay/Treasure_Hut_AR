@@ -794,24 +794,47 @@
       window.speechSynthesis.onvoiceschanged = loadVoices;
     }
 
-    function getBestEnglishVoice() {
+    function getModernWesternFemaleVoice() {
       if (!availableVoices.length && window.speechSynthesis) {
         availableVoices = window.speechSynthesis.getVoices();
       }
-      // Prioritize natural sounding studio voices if installed on device
-      const natural = availableVoices.find(v =>
+
+      // Priority list of premium modern western female voices across Windows, Mac, iOS, Android & Chrome
+      const modernWesternFemaleNames = [
+        // Modern Neural / Natural US Female (Windows 11/10 & Edge)
+        "Jenny", "Aria", "Michelle", "Ava", "Emma", "Ana",
+        // Apple / iOS / macOS Iconic Western Female
+        "Samantha", "Siri", "Victoria", "Allison",
+        // Google / Chrome & Android Modern Western Female
+        "Google US English", "Google UK English Female",
+        // Modern UK & Western Commonwealth Female
+        "Libby", "Sonia", "Fiona", "Moira", "Karen",
+        // Windows Standard US Female
+        "Zira"
+      ];
+
+      // 1. Try finding a preferred modern western female voice
+      for (const name of modernWesternFemaleNames) {
+        const found = availableVoices.find(v =>
+          (v.lang.startsWith("en-US") || v.lang.startsWith("en-GB") || v.lang.startsWith("en")) &&
+          v.name.toLowerCase().includes(name.toLowerCase())
+        );
+        if (found) return found;
+      }
+
+      // 2. Fallback: Search for any English voice designated as female
+      const femaleFallback = availableVoices.find(v =>
         v.lang.startsWith("en") && (
-          v.name.includes("Natural") ||
-          v.name.includes("Google") ||
-          v.name.includes("Samantha") ||
-          v.name.includes("Siri") ||
-          v.name.includes("Karen") ||
-          v.name.includes("Daniel") ||
-          v.name.includes("Arthur") ||
-          v.name.includes("Alex")
+          v.name.toLowerCase().includes("female") ||
+          v.name.toLowerCase().includes("woman")
         )
       );
-      return natural || availableVoices.find(v => v.lang.startsWith("en")) || availableVoices[0] || null;
+      if (femaleFallback) return femaleFallback;
+
+      // 3. Fallback to any western English voice
+      const enWestern = availableVoices.find(v => v.lang === "en-US" || v.lang === "en-GB") ||
+        availableVoices.find(v => v.lang.startsWith("en"));
+      return enWestern || availableVoices[0] || null;
     }
 
     // Dynamic, scalable voice speaker
@@ -824,10 +847,11 @@
         if (!cleanText) return;
 
         const utterance = new SpeechSynthesisUtterance(cleanText);
-        utterance.rate = 1.0;
-        utterance.pitch = 1.05;
+        // Polished modern western female voice tuning (smooth pace, pleasant melodic pitch)
+        utterance.rate = 0.98;
+        utterance.pitch = 1.1;
 
-        const voice = getBestEnglishVoice();
+        const voice = getModernWesternFemaleVoice();
         if (voice) {
           utterance.voice = voice;
         }
